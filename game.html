@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TapRush — prototyp</title>
+<style>
+  html,body{height:100%;margin:0;background:#0f1724;color:#fff;font-family:Inter,Arial}
+  #game{display:flex;flex-direction:column;height:100vh;align-items:center;justify-content:center}
+  canvas{background:linear-gradient(180deg,#071022,#0b2b3b);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .hud{margin-top:12px;display:flex;gap:8px;align-items:center}
+  button{background:#00bcd4;border:none;padding:8px 12px;border-radius:8px;color:#012;cursor:pointer}
+  .mutebtn{background:transparent;border:1px solid rgba(255,255,255,0.08);color:#fff}
+  .score{font-size:1.2rem;font-weight:700}
+  .small{font-size:0.9rem;opacity:0.8}
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="c" width="480" height="720"></canvas>
+  <div class="hud">
+    <div class="score">Wynik: <span id="score">0</span></div>
+    <div class="small">Rekord: <span id="best">0</span></div>
+    <button id="start">Start</button>
+    <button id="share" class="mutebtn">Udostępnij wynik</button>
+    <button id="mute" class="mutebtn">🔊</button>
+  </div>
+  <div class="small" style="margin-top:8px">Stuknij / space — boost. Traf idealnie w zielony okienko, dostaniesz x2 combo!</div>
+</div>
+
+<script>
+/* ----- Prostota: silnik gry w ~300 liniach ----- */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d', { alpha: false });
+const W = canvas.width, H = canvas.height;
+
+let scoreEl = document.getElementById('score');
+let bestEl = document.getElementById('best');
+let startBtn = document.getElementById('start');
+let shareBtn = document.getElementById('share');
+let muteBtn = document.getElementById('mute');
+
+let state = 'menu'; // menu | playing | dead
+let score = 0, best = Number(localStorage.getItem('tr_best')||0);
+
+bestEl.textContent = best;
+
+let mute=false;
+muteBtn.onclick = ()=>{ mute=!mute; muteBtn.textContent = mute ? '🔈' : '🔊' }
+
+function playSound(freq,dur=0.08,vol=0.25){
+  if(mute) return;
+  try{
+    const ctxa = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctxa.createOscillator();
+    const g = ctxa.createGain();
+    o.type='sine'; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(ctxa.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctxa.currentTime+dur);
+    setTimeout(()=>{ o.stop(); ctxa.close() }, dur*1000+50);
+  }catch(e){}
+}
+
+/* Player */
+const player = {
+  x: W*0.22, y: H*0.5, r: 18, vy:0, gravity: 0.9, boost:-13, alive:true,
+  color:'#ffd166'
+};
+
+/* Obstacles generator */
+let obstacles = [];
+let ticks = 0;
+let gapBase = 170;
+let spawnInterval = 120;
+let speed = 3.4;
+
+/* Particles */
+let parts=[];
+
+/* Helpers */
+function rand(a,b){return a + Math.random()*(b-a)|0}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+/* Spawn obstacle with a special 'perfect window' */
+function spawn(){
+  let gap = gapBase + (Math.random()*40 - 20);
+  let y = 120 + Math.random()*(H-240);
+  // perfect window is a small vertical slice inside the gap
+  let perfectSize = 36;
+  let perfectOffset = (Math.random()* (gap-perfectSize));
+  let obs = {
+    x: W + 40,
+    w: 60,
+    gapTop: y - gap/2,
+    gapBottom: y + gap/2,
+    perfectTop: y - gap/2 + perfectOffset,
+    perfectBottom: y - gap/2 + perfectOffset + perfectSize,
+    passed:false
+  };
+  obstacles.push(obs);
+}
+
+/* Collisions */
+function circleRectCollision(cx,cy,r,rx,ry,rw,rh){
+  let nearestX = clamp(cx, rx, rx+rw);
+  let nearestY = clamp(cy, ry, ry+rh);
+  let dx = cx - nearestX;
+  let dy = cy - nearestY;
+  return (dx*dx + dy*dy) <= r*r;
+}
+
+/* Reset */
+function reset(){
+  obstacles = []; ticks=0; score=0; speed=3.4; player.y=H*0.5; player.vy=0; player.alive=true;
+  state='menu'; scoreEl.textContent = score;
+}
+
+/* Input */
+function boost(){
+  if(state==='menu'){ state='playing'; startBtn.textContent='Restart'; playSound(880,0.06,0.3) }
+  if(state==='dead'){ reset(); return; }
+  player.vy = player.boost;
+  spawnParticles(player.x, player.y, 8);
+  playSound(900,0.05,0.2);
+}
+canvas.addEventListener('pointerdown', (e)=>{ boost(); });
+window.addEventListener('keydown', (e)=>{ if(e.code==='Space') { e.preventDefault(); boost(); } });
+
+startBtn.onclick = ()=>{
+  if(state==='menu'){ state='playing'; startBtn.textContent='Restart'; }
+  else reset();
+};
+
+/* Particles for flair */
+function spawnParticles(x,y,n){
+  for(let i=0;i<n;i++){
+    parts.push({
+      x:x, y:y,
+      vx:(Math.random()-0.5)*6,
+      vy:(Math.random()-0.8)*3 - 1,
+      life: 40 + Math.random()*30,
+      col: `hsl(${Math.random()*60+40},80%,60%)`
+    });
+  }
+}
+
+/* Draw function */
+function draw(){
+  // background
+  ctx.fillStyle = '#071022';
+  ctx.fillRect(0,0,W,H);
+
+  // moving gradient / parallax clouds (simple)
+  for(let i=0;i<6;i++){
+    let cx = (ticks*0.6 + i*140) % (W+200) - 100;
+    ctx.globalAlpha = 0.06 + i*0.02;
+    ctx.fillStyle = '#7ce0fd';
+    ctx.beginPath();
+    ctx.ellipse(cx, 80 + (i%2)*12, 70, 25, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // obstacles
+  obstacles.forEach(ob=>{
+    // top rect
+    ctx.fillStyle = '#2b6cb0';
+    ctx.fillRect(ob.x, 0, ob.w, ob.gapTop);
+    // bottom rect
+    ctx.fillRect(ob.x, ob.gapBottom, ob.w, H - ob.gapBottom);
+    // perfect window indicator (glowing)
+    ctx.fillStyle = 'rgba(88,216,163,0.18)';
+    ctx.fillRect(ob.x-2, ob.perfectTop, ob.w+4, ob.perfectBottom - ob.perfectTop);
+    // outline
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeRect(ob.x, 0, ob.w, H);
+  });
+
+  // player
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  let tilt = clamp(player.vy/8, -0.8, 0.8);
+  ctx.rotate(tilt);
+  // body
+  ctx.fillStyle = player.color;
+  ctx.beginPath();
+  ctx.arc(0,0,player.r,0,Math.PI*2);
+  ctx.fill();
+  // eye
+  ctx.fillStyle = '#012';
+  ctx.beginPath();
+  ctx.arc(6, -4, 4, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // particles
+  parts.forEach(p=>{
+    ctx.globalAlpha = clamp(p.life/80,0,1);
+    ctx.fillStyle = p.col;
+    ctx.fillRect(p.x, p.y, 3,3);
+  });
+  ctx.globalAlpha = 1;
+
+  // HUD overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(8,8,110,34);
+  ctx.fillStyle = '#fff';
+  ctx.font = '18px Inter,Arial';
+  ctx.fillText('Score: '+score, 16, 32);
+}
+
+/* Update function */
+function update(){
+  if(state==='playing'){
+    ticks++;
+    // physics
+    player.vy += player.gravity * 0.12;
+    player.y += player.vy;
+
+    // spawn
+    if(ticks % Math.floor(spawnInterval) === 2) spawn();
+    // increase difficulty slowly
+    if(ticks % 600 === 0) { speed += 0.18; gapBase = Math.max(120, gapBase - 6); }
+
+    // obstacles movement + scoring
+    obstacles.forEach(ob=>{
+      ob.x -= speed;
+      // scoring when passes
+      if(!ob.passed && ob.x + ob.w < player.x - player.r){
+        ob.passed = true;
+        // determine if player went through perfect window last frame?
+        // For simplicity, check if player's y inside perfect region at pass moment
+        if(player.y > ob.perfectTop && player.y < ob.perfectBottom){
+          score += 2; // perfect double points
+          spawnParticles(player.x, player.y, 16);
+          playSound(1200,0.07,0.35);
+        } else {
+          score += 1;
+          playSound(600,0.04,0.16);
+        }
+        scoreEl.textContent = score;
+        if(score > best){ best = score; localStorage.setItem('tr_best', best); bestEl.textContent = best; }
+      }
+    });
+
+    // remove offscreen
+    obstacles = obstacles.filter(o=> o.x + o.w > -60);
+
+    // particles update
+    parts.forEach(p=>{ p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life-=1 });
+    parts = parts.filter(p=>p.life>0);
+
+    // collisions with obstacles
+    for(let ob of obstacles){
+      // top rect
+      if(circleRectCollision(player.x,player.y,player.r, ob.x, 0, ob.w, ob.gapTop)) die();
+      // bottom rect
+      if(circleRectCollision(player.x,player.y,player.r, ob.x, ob.gapBottom, ob.w, H - ob.gapBottom)) die();
+    }
+
+    // ground & ceiling
+    if(player.y - player.r < 0) { player.y = player.r; player.vy = 0; }
+    if(player.y + player.r > H){ player.y = H - player.r; die(); }
+
+  }
+}
+
+function die(){
+  if(!player.alive) return;
+  player.alive=false;
+  state='dead';
+  playSound(180,0.4,0.6);
+  spawnParticles(player.x, player.y, 32);
+  startBtn.textContent='Restart';
+}
+
+/* Main loop */
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* --- Sharing: capture canvas and use Web Share API or copy data URL --- */
+async function shareScore(){
+  // draw a share overlay
+  const tmp = document.createElement('canvas');
+  tmp.width = W; tmp.height = H;
+  const tc = tmp.getContext('2d');
+  tc.fillStyle = '#071022'; tc.fillRect(0,0,W,H);
+  // snapshot current canvas
+  tc.drawImage(canvas,0,0);
+  // overlay text
+  tc.fillStyle = '#fff';
+  tc.font = 'bold 36px Inter,Arial';
+  tc.fillText('TapRush', 24, 64);
+  tc.font = '28px Inter,Arial';
+  tc.fillText(`Wynik: ${score}`, 24, 110);
+  tc.font = '18px Inter,Arial';
+  tc.fillText('Podejmij wyzwanie! #TapRush', 24, 140);
+
+  const dataUrl = tmp.toDataURL('image/png');
+  try{
+    if(navigator.canShare && navigator.canShare({files:[]})){
+      // try share
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'taprush.png',{type:'image/png'});
+      await navigator.share({files:[file], text:`Mój wynik w TapRush: ${score}! Podejmiesz wyzwanie?`, title:'TapRush'});
+    }else if(navigator.share){
+      await navigator.share({title:'TapRush', text:`Mój wynik: ${score} — spróbuj pobić!`});
+    }else{
+      // fallback: open the image in new tab and copy URL
+      const w = window.open();
+      if(w){ w.document.write(`<img src="${dataUrl}" alt="wynik"><p>Wynik: ${score}</p>`); }
+      // also copy text to clipboard
+      await navigator.clipboard.writeText(`Mój wynik w TapRush: ${score}!`);
+      alert('Obraz otwarty w nowej karcie. Tekst skopiowany do schowka.');
+    }
+  }catch(e){
+    // fallback
+    window.open(dataUrl,'_blank');
+  }
+}
+shareBtn.onclick = ()=>shareScore();
+
+</script>
+</body>
+</html>
