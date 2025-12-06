@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <title>I will be millionaire — Rozszerzona wersja (HIGH RISK + SPORT)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root{
+      --bg1:#071021; --bg2:#0f1724; --accent:#10b981; --muted:#94a3b8; --panel:#0b1220;
+    }
+    html,body,#root{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,var(--bg1), var(--bg2));
+      color:#e6eef6;
+    }
+    .app { max-width:1200px; margin:18px auto; padding:18px; display:grid; grid-template-columns: 360px 1fr; gap:18px; }
+    header.app-header{ grid-column:1/-1; display:flex; align-items:center; gap:12px; padding:10px 14px; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+    .logo .circle { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0ea5a1,#60a5fa); box-shadow: 0 6px 18px rgba(0,0,0,0.5); font-weight:700; }
+    .title { font-size:20px; font-weight:800; letter-spacing:0.2px;}
+    .subtitle { font-size:12px; color:var(--muted) }
+    .panel { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015)); border-radius:12px; padding:12px; border:1px solid rgba(255,255,255,0.03); box-shadow: 0 8px 30px rgba(2,6,23,0.6); }
+    .networth { font-size:26px; font-weight:800; display:flex; align-items:baseline; gap:10px; }
+    .progressbar { width:100%; height:10px; background:rgba(255,255,255,0.03); border-radius:999px; overflow:hidden; margin-top:8px;}
+    .progressbar > i { display:block; height:100%; background:linear-gradient(90deg,var(--accent), #60a5fa); width:0%; transition:width 600ms ease; }
+    .stat-grid {display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;}
+    .stat { background: rgba(255,255,255,0.02); padding:8px; border-radius:8px; font-size:13px; }
+    .tiny { font-size:12px; color:var(--muted); }
+    .chart { width:100%; height:160px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border-radius:8px; padding:8px; box-sizing:border-box; }
+    .events { max-height:220px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+    .event { background:rgba(0,0,0,0.12); padding:8px; border-radius:8px; font-size:13px; color:#dbeafe; border:1px solid rgba(255,255,255,0.02); }
+    .controls { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .btn { background:linear-gradient(180deg,var(--accent), #34d399); color:#062017; font-weight:700; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; box-shadow: 0 10px 22px rgba(16,185,129,0.12); }
+    .btn.secondary { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); font-weight:600; }
+    .btn.ghost { background:transparent; color:var(--muted); border:1px dashed rgba(255,255,255,0.03); }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; }
+    .tab { padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; color:var(--muted); background:transparent; border:1px solid rgba(255,255,255,0.02); }
+    .tab.active { background:rgba(255,255,255,0.02); color:#fff; border-color:rgba(255,255,255,0.04); }
+    .list-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+    .biz-card { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); min-height:120px; display:flex; flex-direction:column; justify-content:space-between; }
+    .biz-title { font-weight:800; font-size:14px; }
+    .biz-meta { font-size:12px; color:var(--muted); margin-top:6px; }
+    .biz-actions { display:flex; gap:6px; margin-top:8px; }
+    .toasts { position:fixed; right:18px; bottom:18px; display:flex; flex-direction:column; gap:8px; z-index:999; }
+    .toast { background:#031021; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 8px 30px rgba(2,6,23,0.6); min-width:220px; }
+    .overlay { position:fixed; inset:0; background: linear-gradient(180deg, rgba(3,7,18,0.85), rgba(3,7,18,0.95)); display:flex; align-items:center; justify-content:center; z-index:2000; }
+    .modal { background: linear-gradient(180deg,#032e2a,#07263a); padding:18px; border-radius:12px; text-align:left; border:1px solid rgba(255,255,255,0.04); box-shadow:0 30px 80px rgba(2,6,23,0.8); width:720px; max-width:95%; color:#e6f8f4;}
+    .modal h3 { margin-top:0; }
+    .input, input[type="number"], input[type="text"], select { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px; border-radius:8px; color:inherit; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .col { display:flex; flex-direction:column; gap:8px; }
+    @media (max-width:1000px){ .app{grid-template-columns:1fr; padding:12px} header.app-header{flex-direction:column; align-items:flex-start} .chart{height:120px} .modal{width:92%} }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+  /*************************************************************************
+   * Rozszerzona wersja gry "I will be millionaire" - HIGH RISK EDIT + SPORT
+   * - CEL: 100 000 000 PLN
+   * - Dodatki: sprzedaż biznesów, kluby sportowe, zwiększone ryzyko
+   *************************************************************************/
+
+  const { useState, useEffect, useMemo, useRef } = React;
+
+  // === CHANGED: target increased to 100 million
+  const TARGET = 100_000_000;
+
+  /* ---------- helpers ---------- */
+  const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+  const formatPLN = (v) => {
+    if (typeof v !== 'number') v = Number(v) || 0;
+    return v.toLocaleString('pl-PL', { style:'currency', currency:'PLN', maximumFractionDigits:0 });
+  };
+  const rand = (a,b)=> Math.random()*(b-a)+a;
+  const normal = (mu,sigma)=>{ let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random(); return mu+sigma*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+  function freshState(){
+    return {
+      day:1,
+      portfolio: {
+        cash: 20000,
+        stocks: { qty:0, price:100 },
+        crypto: { qty:0, price:100 },
+        realEstate: { qty:0, price:100 }
+      },
+      clickPower: 150,
+      clickStreak:0,
+      passivePerDay: 0,
+      speed: 1,
+      markets: [{ day:0, stocks:100, crypto:100, real:100 }],
+      businesses: createInitialBusinesses(), // rozszerzone listy z generatora (z klubami sportowymi)
+      events: [],
+      history: [{ day:0, net: 20000 }],
+      achievements: {},
+      leaderboard: JSON.parse(localStorage.getItem('iwbm_lb_v2')||'[]'),
+      options: [],
+      marginDebt: 0,
+      casinoJackpot: 50000,
+      playerMood: 0.5,
+      simulatedBots: generateBots(30),
+    };
+  }
+
+  /* ---------- generators (increased base risk + sport clubs) ---------- */
+  function createInitialBusinesses(){
+    // base list with increased risk multipliers
+    const base = [
+      { name:"Sklep internetowy (dropship)", key:"dropship", level:0, baseCost:2000, dailyProfit:200, risk:0.16, active:false, desc:"Niskie bariery, moderowane zyski." },
+      { name:"Usługi lokalne", key:"service", level:0, baseCost:7000, dailyProfit:450, risk:0.14, active:false, desc:"Stały popyt." },
+      { name:"Kawiarnia", key:"cafe", level:0, baseCost:15000, dailyProfit:700, risk:0.16, active:false, desc:"Dobra marża." },
+      { name:"Mała agencja marketingowa", key:"agency", level:0, baseCost:30000, dailyProfit:1400, risk:0.18, active:false, desc:"Rosnący popyt." },
+      { name:"Startup AI", key:"startup", level:0, baseCost:60000, dailyProfit:0, risk:0.36, active:false, desc:"Wysokie ryzyko, możliwość EXIT'u." },
+      { name:"Inwestycja deweloperska", key:"dev", level:0, baseCost:120000, dailyProfit:3000, risk:0.28, active:false, desc:"Czynsze i duże kapitały." },
+      { name:"Fundusz VC", key:"vc", level:0, baseCost:250000, dailyProfit:0, risk:0.48, active:false, desc:"Wysokie ryzyko, wielkie wyjścia." },
+      { name:"Kasyno (udzial)", key:"casino_share", level:0, baseCost:35000, dailyProfit:1200, risk:0.44, active:false, desc:"Udział w kasynie — duże wahania." },
+      { name:"Hedge Fund", key:"hedge", level:0, baseCost:500000, dailyProfit:8000, risk:0.56, active:false, desc:"Zaawansowane strategie, wysokie ryzyko." },
+      // sport clubs as distinct options (now players can inwestować w kluby sportowe)
+      { name:"Klub piłkarski (mniejszy)", key:"sport_football_small", level:0, baseCost:80000, dailyProfit:1200, risk:0.42, active:false, desc:"Inwestycja w lokalny klub piłkarski — prestiż i ryzyko." },
+      { name:"Klub koszykarski", key:"sport_basket", level:0, baseCost:120000, dailyProfit:1800, risk:0.44, active:false, desc:"Inwestycja w klub koszykarski — sezonowość i ryzyko." },
+      { name:"Klub piłkarski (duży)", key:"sport_football_big", level:0, baseCost:450000, dailyProfit:4200, risk:0.56, active:false, desc:"Topowy klub — duże wpływy, duże ryzyko." },
+    ];
+    const extras = [];
+    const categories = ['Food','Tech','Retail','Transport','Media','Logistics','Bio','Energy','Space','Crypto','Sport'];
+    for(let i=0;i<80;i++){
+      const cat = categories[i % categories.length];
+      const idx = i+1;
+      // === INCREASED: multiply risk (stronger threats)
+      const risk = clamp((0.14 + Math.random()*0.6) * 1.35, 0.05, 0.92);
+      const baseCost = Math.round((5000 + Math.random()*800000) * (1 + Math.random()*2));
+      const daily = Math.round(Math.max(0, (baseCost * (0.001 + Math.random()*0.02))));
+      extras.push({
+        name: `${cat} Business #${idx}`,
+        key: `biz_${cat.toLowerCase()}_${idx}`,
+        level:0,
+        baseCost,
+        dailyProfit: daily,
+        risk,
+        active:false,
+        desc: `Typ: ${cat} — generowany biznes o zróżnicowanym ryzyku.`,
+        health: 1.0,
+        infoQuality: clamp(0.3 + Math.random()*0.7, 0.15, 0.95)
+      });
+    }
+    return [...base, ...extras];
+  }
+
+  function generateBots(n){
+    const bots = [];
+    for(let i=0;i<n;i++){
+      bots.push({
+        id: `bot_${i}`,
+        name: `TraderBot_${i+1}`,
+        net: Math.round(10000 + Math.random()*500000),
+        strategy: Math.random()<0.5 ? 'aggressive' : 'conservative',
+      });
+    }
+    return bots;
+  }
+
+  /* ---------- persistence & toasts ---------- */
+  function usePersistent(key, initFn){
+    const [s,setS] = useState(()=> {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initFn(); } catch(e){ return initFn(); }
+    });
+    useEffect(()=>{ try{ localStorage.setItem(key, JSON.stringify(s)); }catch(e){} }, [key,s]);
+    return [s,setS];
+  }
+  function useToasts(){
+    const [toasts, setToasts] = useState([]);
+    function push(title,desc){
+      const id = Date.now() + Math.random();
+      setToasts(t=> [{id,title,desc}, ...t].slice(0,6));
+      setTimeout(()=> setToasts(t=> t.filter(x=>x.id!==id)), 5200);
+    }
+    return { toasts, push };
+  }
+
+  /* ---------- Main App ---------- */
+  function App(){
+    const [game, setGame] = usePersistent('iwbm_state_v3_highrisk_sport', freshState);
+    const { toasts, push } = useToasts();
+    const [tab, setTab] = useState('work');
+    const [won, setWon] = useState(false);
+    const [showCasino, setShowCasino] = useState(false);
+    const [showOptions, setShowOptions] = useState(false);
+    const [marketNews, setMarketNews] = useState([]);
+    const [inspectReport, setInspectReport] = useState(null);
+
+    const latestMarket = game.markets[game.markets.length-1];
+    const netWorth = useMemo(()=>{
+      const p = game.portfolio;
+      return Math.round(p.cash + p.stocks.qty*latestMarket.stocks + p.crypto.qty*latestMarket.crypto + p.realEstate.qty*latestMarket.real - game.marginDebt);
+    }, [game, latestMarket]);
+
+    // DAY TICK: ramped-up volatility / risk
+    useEffect(()=>{
+      let running = true;
+      const tickInterval = () => {
+        if (!running) return;
+        setGame(prev=>{
+          const nextDay = prev.day + 1;
+          const last = prev.markets[prev.markets.length-1];
+
+          // === INCREASED: shock probability and magnitude
+          const baseShockProb = 0.035; // higher than before
+          let shock = 0;
+          if (Math.random() < baseShockProb) {
+            const sign = Math.random()<0.5?-1:1;
+            const mag = Math.random()*1.2; // larger magnitude
+            shock = sign * mag;
+            prev.events.unshift({ id: Date.now()+Math.random(), day: nextDay, title: sign>0? 'Niespodziewane pozytywne wieści' : 'Nagły kryzys', impact: `${(mag*100).toFixed(0)}%` });
+          }
+
+          // volatility modifiers (vc/hedge amplify more)
+          const volMod = 1 + ((prev.businesses.find(b=>b.key==='vc' && b.active)?.level || 0) * 0.05) + ((prev.businesses.find(b=>b.key==='hedge' && b.active)?.level || 0) * 0.06);
+
+          // === INCREASED: base variances larger
+          const nextMarket = {
+            day: nextDay,
+            stocks: Math.max(1, last.stocks * (1 + normal(0.0009*volMod, 0.04*volMod) + shock)),
+            crypto: Math.max(1, last.crypto * (1 + normal(0.0025*volMod, 0.16*volMod) + shock * 2.1)),
+            real: Math.max(1, last.real * (1 + normal(0.0005*volMod, 0.018*volMod) + shock * 0.9)),
+          };
+
+          let cash = prev.portfolio.cash + prev.passivePerDay;
+          const events = [...prev.events];
+
+          // Businesses payouts + health/failure checks (much higher risk)
+          let passiveDelta = 0;
+          const updatedBusinesses = prev.businesses.map((b, idx) => {
+            if (!b.active) return b;
+            const levelMul = 1 + (b.level || 1)*0.45;
+            const expected = (b.dailyProfit || 0) * levelMul;
+            // === INCREASED: sigma amplification by risk
+            const sigma = Math.max(1, expected* (b.risk*2.2 + 0.15));
+            let today = normal(expected, Math.max(50, sigma));
+            const health = (b.health !== undefined) ? b.health : 1.0;
+            // === INCREASED: fail prob multiplier (zmienione na 0.32 — większe ryzyko upadku)
+            const failProb = clamp((b.risk || 0.12) * (1 + (1 - health)) * 0.32, 0, 0.96);
+            if (Math.random() < failProb){
+              const lossFactor = rand(0.3, 0.98);
+              today -= Math.abs(normal(expected*3, expected*2));
+              const willDie = Math.random() < 0.92;
+              const newB = { ...b, active: !willDie, health: willDie? 0: Math.max(0.01, health*0.25) };
+              if (willDie) {
+                events.unshift({ id:Date.now()+idx, day:nextDay, title:`Upadek: ${b.name}`, impact:`Biznes przestał działać — straty`});
+                passiveDelta -= (b.dailyProfit || 0) * 0.18;
+              } else {
+                events.unshift({ id:Date.now()+idx, day:nextDay, title:`Kryzys, ale przetrwał: ${b.name}`, impact:`Duże straty`});
+              }
+              cash += today;
+              return newB;
+            } else {
+              // EXIT more probable for startups/VCs (both big winner & big loser)
+              if ((b.key==='startup' || b.key==='vc') && Math.random() < 0.006 * (b.level+1)){
+                const exitCash = Math.round((b.baseCost || 60000) * rand(1.8, 30) * (1 + b.level*0.6)); // much larger exits possible
+                cash += exitCash;
+                events.unshift({ id:Date.now()+8000+idx, day:nextDay, title:`EXIT: ${b.name}`, impact: `Wpłynęło ${formatPLN(exitCash)}`});
+                return { ...b, active:false, level:0, baseCost: Math.round(b.baseCost*1.4) };
+              }
+              cash += today;
+              passiveDelta += (b.dailyProfit || 0) * 0.15;
+              const newHealth = clamp((b.health !== undefined ? b.health : 1.0) + normal(0, 0.03), 0, 1);
+              return { ...b, health: newHealth };
+            }
+          });
+
+          // options expiry & maintenance (options more valuable/volatile)
+          const remainingOptions = [];
+          prev.options.forEach(opt=>{
+            if (opt.expiryDay <= nextDay){
+              const marketPrice = nextMarket[opt.asset];
+              let payout = 0;
+              if (opt.type==='call' && marketPrice > opt.strike) payout = (marketPrice - opt.strike) * opt.contracts * 100;
+              if (opt.type==='put' && marketPrice < opt.strike) payout = (opt.strike - marketPrice) * opt.contracts * 100;
+              cash += payout;
+              events.unshift({ id:Date.now()+3000, day: nextDay, title:`Opcja wygasła (${opt.asset} ${opt.type})`, impact: payout>0 ? `Zysk ${formatPLN(Math.round(payout))}` : `Strata ${formatPLN(Math.round(opt.premium))}` });
+            } else {
+              remainingOptions.push(opt);
+            }
+          });
+
+          // margin interest (harsher)
+          const marginInterest = Math.round(prev.marginDebt * 0.013); // slightly higher daily interest
+          cash -= marginInterest;
+          if (marginInterest > 0) events.unshift({ id:Date.now()+4000, day:nextDay, title:'Odsetki od margin', impact:`- ${formatPLN(marginInterest)}` });
+
+          // casino jackpot growth
+          let jackpot = Math.max(50000, prev.casinoJackpot + Math.round(Math.abs(prev.casinoJackpot * 0.003 + normal(0,400))));
+
+          // random life events + macro events (more extreme)
+          if (Math.random() < 0.12){
+            const good = Math.random() < 0.48;
+            const amount = Math.abs(Math.round(normal(1200, 5200)));
+            events.unshift({ id:Date.now()+2000, day:nextDay, title: good ? 'Niespodziewany zysk' : 'Nieplanowany wydatek', impact:(good?'+':'-')+formatPLN(amount) });
+            cash += good ? amount : -amount;
+          }
+
+          // market news generation
+          if (Math.random() < 0.22){
+            const impact = rand(-0.5,0.5); // stronger impacts
+            const asset = Math.random() < 0.45 ? 'stocks' : Math.random()<0.75 ? 'crypto' : 'real';
+            const headline = impact>0 ? `Pozytywne wieści dla ${asset}` : `Problem dla ${asset}`;
+            events.unshift({ id:Date.now()+5000, day: nextDay, title: headline, impact: `${(impact*100).toFixed(1)}%` });
+            setMarketNews(m=> [{day:nextDay, asset, impact, headline}, ...m].slice(0,12));
+            nextMarket[asset] = Math.max(1, nextMarket[asset] * (1 + impact));
+          }
+
+          // add history and return
+          const history = [...prev.history.slice(-600), { day: nextDay, net: 0 }];
+          const updated = {
+            ...prev,
+            day: nextDay,
+            portfolio: { ...prev.portfolio, cash },
+            markets: [...prev.markets.slice(-600), nextMarket],
+            events: events.slice(0,160),
+            history,
+            options: remainingOptions,
+            casinoJackpot: jackpot,
+            businesses: updatedBusinesses,
+            passivePerDay: Math.max(0, prev.passivePerDay + passiveDelta),
+          };
+          const net = updated.portfolio.cash + updated.portfolio.stocks.qty*nextMarket.stocks + updated.portfolio.crypto.qty*nextMarket.crypto + updated.portfolio.realEstate.qty*nextMarket.real - updated.marginDebt;
+          history[history.length-1].net = net;
+          return updated;
+        });
+
+        // schedule next tick (respect speed each tick)
+        const intervalMs = 1000 / clamp(game.speed, 0.25, 6);
+        timerId = setTimeout(tickInterval, intervalMs);
+      };
+
+      let timerId = setTimeout(tickInterval, 1000 / clamp(game.speed, 0.25, 6));
+      return ()=> { running = false; clearTimeout(timerId); };
+    }, [game.speed, setGame]);
+
+    // win detection & bots leaderboard simulation
+    useEffect(()=>{
+      if (netWorth >= TARGET && !won){
+        setWon(true);
+        push('Cel osiągnięty!', `Gratulacje — osiągnąłeś ${formatPLN(Math.round(netWorth))}. Możesz zapisać wynik na leaderboard.`);
+        setGame(s=>{
+          const lb = [...s.leaderboard, { name: 'Gracz', net: Math.round(netWorth), day: s.day, date:new Date().toISOString() }];
+          localStorage.setItem('iwbm_lb_v2', JSON.stringify(lb.sort((a,b)=>b.net-a.net).slice(0,30)));
+          return { ...s, leaderboard: lb };
+        });
+      }
+      // bots update (more variance)
+      setGame(s=>{
+        if (!s) return s;
+        const bots = (s.simulatedBots||[]).map(b=>{
+          const drift = b.strategy==='aggressive' ? rand(-0.8,1.2) : rand(-0.2,0.6);
+          const newNet = Math.max(1000, Math.round(b.net * (1 + drift * 0.01)));
+          return { ...b, net: newNet };
+        });
+        return { ...s, simulatedBots: bots };
+      });
+    }, [netWorth, won]);
+
+    /* ---------- Player actions ---------- */
+    function clickWork(){
+      setGame(s=>{
+        const streak = Math.min(100, s.clickStreak+1);
+        // === increased variance in click reward
+        const base = s.clickPower;
+        const bonus = Math.round(base * (1 + Math.floor(streak/6)*0.12 + normal(0,0.12)));
+        const power = Math.max(1, bonus);
+        push('Praca', `Zarobiłeś ${formatPLN(Math.round(power))}`);
+        return { ...s, clickStreak:streak, portfolio:{ ...s.portfolio, cash: s.portfolio.cash + power } };
+      });
+    }
+
+    // buy asset with optional margin
+    function buyAsset(key, amountCash, useMargin=false){
+      if (amountCash <= 0) return;
+      setGame(s=>{
+        const prices = { stocks: latestMarket.stocks, crypto: latestMarket.crypto, realEstate: latestMarket.real };
+        const pos = s.portfolio[key];
+        const price = prices[key];
+        const qty = amountCash / price;
+        let cash = s.portfolio.cash;
+        let marginDebt = s.marginDebt;
+        if (useMargin){
+          // === increased leverage offered
+          const borrow = Math.round(amountCash * 0.7);
+          marginDebt += borrow;
+          cash += borrow;
+        }
+        if (cash < amountCash){ push('Brak środków'); return s; }
+        const newQty = (pos.qty||0) + qty;
+        const newAvg = newQty===0?0: ((pos.qty||0)* (pos.price||price) + qty*price)/newQty;
+        const nextPortfolio = { ...s.portfolio, cash: cash - amountCash, [key]: { qty:newQty, price:newAvg } };
+        push('Kupiono', `${qty.toFixed(3)} ${key} @ ${formatPLN(price)} ${useMargin? '(z marginesem)':''}`);
+        return { ...s, portfolio: nextPortfolio, marginDebt };
+      });
+    }
+
+    function sellAsset(key, qty){
+      if (qty <= 0) return;
+      setGame(s=>{
+        const price = key==='realEstate' ? latestMarket.real : key==='stocks' ? latestMarket.stocks : latestMarket.crypto;
+        const pos = s.portfolio[key];
+        const sellQty = Math.min(qty, pos.qty);
+        const nextPosQty = pos.qty - sellQty;
+        const next = { ...s.portfolio, cash: s.portfolio.cash + sellQty*price, [key]: { qty: nextPosQty, price: nextPosQty===0?0:pos.price } };
+        push('Sprzedano', `${sellQty.toFixed(3)} ${key} -> ${formatPLN(Math.round(sellQty*price))}`);
+        return { ...s, portfolio: next };
+      });
+    }
+
+    // === NEW: sell business functionality (możliwość sprzedaży aktywnego biznesu)
+    function sellBusiness(idx){
+      setGame(s=>{
+        const b = s.businesses[idx];
+        if (!b) { push('Błąd','Nie znaleziono biznesu'); return s; }
+        if (!b.active) { push('Nie aktywny', 'Biznes nie jest aktywny'); return s; }
+        // sale price based on baseCost, level, health and lossy multiplier (możliwość straty)
+        const healthFactor = (b.health !== undefined ? b.health : 1.0);
+        const levelFactor = 1 + (b.level || 0) * 0.2;
+        // lossy sale - health i ryzyko obniżają cenę
+        const saleMultiplier = clamp(0.4 + healthFactor * 0.9 + normal(0,0.12), 0.15, 1.6);
+        const salePrice = Math.round((b.baseCost || 1000) * levelFactor * saleMultiplier * rand(0.6,1.15));
+        // chance że sprzedaż przyniesie stratę (duże ryzyko) — jeżeli zdrowie niskie lub b.risk wysokie
+        const lossChance = clamp(0.12 + (1-healthFactor)*0.6 + (b.risk||0)*0.2, 0, 0.9);
+        const finalPrice = Math.random() < lossChance ? Math.round(salePrice * rand(0.2,0.7)) : salePrice;
+        const newBiz = { ...b, active:false, level:0, health:0.7 }; // po sprzedaży można odtworzyć później, poziom reset
+        const newBusinesses = s.businesses.map((x,i)=> i===idx?newBiz:x);
+        const newCash = s.portfolio.cash + finalPrice;
+        push('Sprzedano biznes', `${b.name} sprzedany za ${formatPLN(finalPrice)} ${Math.random() < lossChance ? '(sprzedaż z utratą wartości)' : ''}`);
+        // reduce passivePerDay accordingly
+        const passiveReduction = (b.dailyProfit || 0) * 0.18;
+        return { ...s, businesses: newBusinesses, portfolio:{ ...s.portfolio, cash: newCash }, passivePerDay: Math.max(0, s.passivePerDay - passiveReduction) };
+      });
+    }
+
+    // buy option
+    function buyOption({ type, asset, strike, premium, expiryDays, contracts }){
+      setGame(s=>{
+        if (s.portfolio.cash < premium) { push('Brak środków'); return s; }
+        const opt = { id: Date.now()+Math.random(), type, asset, strike, premium, expiryDay: s.day + expiryDays, contracts };
+        push('Kupiono opcję', `${type.toUpperCase()} ${asset} strike ${strike} za ${formatPLN(Math.round(premium))}`);
+        return { ...s, portfolio: {...s.portfolio, cash: s.portfolio.cash - premium}, options: [...s.options, opt] };
+      });
+    }
+
+    // business management: start, upgrade, check
+    function startBusiness(idx){
+      setGame(s=>{
+        const b = s.businesses[idx];
+        if (b.active){ push('Już aktywne'); return s; }
+        if (s.portfolio.cash < b.baseCost){ push('Za mało gotówki'); return s; }
+        const upd = { ...b, active:true, level: b.level || 1, health: b.health !== undefined ? b.health : 1.0 };
+        push('Start biznesu', `${b.name} uruchomiony za ${formatPLN(b.baseCost)}`);
+        return { ...s, passivePerDay: s.passivePerDay + (b.dailyProfit||0)*0.18, portfolio:{ ...s.portfolio, cash: s.portfolio.cash - b.baseCost }, businesses: s.businesses.map((x,i)=> i===idx?upd:x) };
+      });
+    }
+    function upgradeBusiness(idx){
+      setGame(s=>{
+        const b = s.businesses[idx];
+        if (!b.active) { push('Najpierw uruchom biznes'); return s; }
+        const cost = Math.round(b.baseCost * Math.pow(1.7, b.level||1));
+        if (s.portfolio.cash < cost){ push('Za mało gotówki'); return s; }
+        const upd = { ...b, level: (b.level||1)+1 };
+        push('Ulepszono', `${b.name} -> poziom ${upd.level}`);
+        return { ...s, passivePerDay: s.passivePerDay + (b.dailyProfit||0)*0.1, portfolio:{...s.portfolio, cash: s.portfolio.cash - cost}, businesses: s.businesses.map((x,i)=> i===idx?upd:x) };
+      });
+    }
+    function checkBusiness(idx){
+      const b = game.businesses[idx];
+      if(!b){ push('Błąd', 'Nie odnaleziono biznesu'); return; }
+      const infoQ = b.infoQuality !== undefined ? b.infoQuality : (0.5 + Math.random()*0.4);
+      const health = b.health !== undefined ? b.health : 1.0;
+      const baseFail = b.risk || 0.1;
+      const noise = normal(0, (1-infoQ)*0.35);
+      const estFailureProb = clamp(baseFail * (1 + (1-health)) * (1 + noise), 0, 1);
+      const estProfit = Math.round((b.dailyProfit||0) * (1 + (health-0.5)*0.9 + noise));
+      const report = {
+        name: b.name,
+        currentHealth: Math.round(health*100),
+        estimatedFailureProb: (estFailureProb*100).toFixed(1) + '%',
+        estimatedProfitPerDay: formatPLN(estProfit),
+        infoConfidence: Math.round(infoQ*100) + '%'
+      };
+      setInspectReport(report);
+      push('Sprawdzenie biznesu', `${b.name} — raport wygenerowany (niepewny)`);
+    }
+
+    // margin actions
+    function takeLoan(amount){
+      setGame(s=>{
+        push('Kredyt', `Pozyskano ${formatPLN(amount)} (1.3% odsetek/dzień)`);
+        return { ...s, portfolio:{ ...s.portfolio, cash: s.portfolio.cash + amount }, marginDebt: s.marginDebt + amount };
+      });
+    }
+    function repayMargin(amount){
+      setGame(s=>{
+        const pay = Math.min(amount, s.marginDebt, s.portfolio.cash);
+        if (pay<=0){ push('Nic do spłaty'); return s; }
+        push('Spłata', `Spłacono ${formatPLN(Math.round(pay))} długu`);
+        return { ...s, portfolio:{ ...s.portfolio, cash: s.portfolio.cash - pay }, marginDebt: s.marginDebt - pay };
+      });
+    }
+
+    // casino (increased variance)
+    function playCasino({ gameType, stake, betChoice }){
+      if (stake <= 0) { push('Błąd', 'Podaj poprawną stawkę'); return; }
+      setGame(s=>{
+        if (s.portfolio.cash < stake){ push('Za mało gotówki'); return s; }
+        let cash = s.portfolio.cash - stake;
+        let jackpot = s.casinoJackpot;
+        let result = { won:false, amount:0, text:'' };
+
+        if (gameType==='coin'){
+          const win = Math.random() < 0.48; // slightly worse
+          if (win){ const payout = Math.round(stake*1.9); cash += payout; result={won:true,amount:payout,text:`Wygrałeś ${formatPLN(payout)}`} }
+          else { jackpot += Math.round(stake*0.25); result={won:false,amount:-stake,text:`Przegrałeś ${formatPLN(stake)}`} }
+        } else if (gameType==='roulette'){
+          const spin = Math.floor(Math.random()*37);
+          let win=false; let payout=0;
+          if (typeof betChoice === 'number'){
+            if (spin === Number(betChoice)) { win=true; payout = stake*35; }
+          } else if (betChoice==='red' || betChoice==='black'){
+            const reds = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+            const isRed = reds.has(spin);
+            if (spin!==0 && ((betChoice==='red' && isRed) || (betChoice==='black' && !isRed))) { win=true; payout = Math.round(stake*1.9); }
+          } else if (betChoice==='even' || betChoice==='odd'){
+            if (spin!==0 && ((betChoice==='even' && spin%2===0) || (betChoice==='odd' && spin%2===1))){ win=true; payout = Math.round(stake*1.9); }
+          }
+          if (win){ cash += payout; result={won:true,amount:payout,text:`Spin ${spin} — Wygrałeś ${formatPLN(payout)}`} }
+          else { jackpot += Math.round(stake*0.18); result={won:false,amount:-stake,text:`Spin ${spin} — Przegrałeś ${formatPLN(stake)}`} }
+        } else if (gameType==='slots'){
+          const r1 = Math.ceil(Math.random()*6), r2 = Math.ceil(Math.random()*6), r3 = Math.ceil(Math.random()*6);
+          let payout=0;
+          if (r1===r2 && r2===r3) payout = stake*16; // bigger jackpot
+          else if (r1===r2 || r1===r3 || r2===r3) payout = Math.round(stake*2.1);
+          if (payout>0){ cash += payout; result={won:true,amount:payout,text:`Slot ${r1}-${r2}-${r3} — Wygrałeś ${formatPLN(payout)}`} }
+          else { jackpot += Math.round(stake*0.16); result={won:false,amount:-stake,text:`Slot ${r1}-${r2}-${r3} — Przegrałeś ${formatPLN(stake)}`} }
+        } else if (gameType==='jackpot'){
+          if (Math.random() < 0.007){ const payout = s.casinoJackpot; cash += payout; jackpot = 50000; result={won:true,amount:payout,text:`JACKPOT! ${formatPLN(payout)}`} }
+          else { jackpot += Math.round(stake*0.3); result={won:false,amount:-stake,text:`Nic — spróbuj ponownie`} }
+        } else if (gameType==='highroller'){
+          if (Math.random() < 0.44){ const payout = stake*2.4; cash += payout; result={won:true,amount:payout,text:`Highroller — Wygrałeś ${formatPLN(payout)}`} }
+          else { jackpot += Math.round(stake*0.35); result={won:false,amount:-stake,text:`Highroller — Przegrałeś ${formatPLN(stake)}`} }
+        } else if (gameType==='blackjack'){
+          function drawCard(){ return Math.ceil(Math.random()*11); }
+          let player = drawCard() + drawCard();
+          let dealer = drawCard() + drawCard();
+          while(player < 17) player += drawCard();
+          while(dealer < 17) dealer += drawCard();
+          if (player>21 && dealer>21){ result={won:false,amount:-stake,text:`Remis (oba >21)`}; }
+          else if (player>21) { result={won:false,amount:-stake,text:`Przegrałeś: ${player} vs ${dealer}`} }
+          else if (dealer>21 || player>dealer){ const payout = Math.round(stake*2.05); cash += payout; result={won:true,amount:payout,text:`Wygrałeś Blackjack: ${player} vs ${dealer}`} }
+          else if (player===dealer){ const payout = stake; cash += payout; result={won:true,amount:payout/1,text:`Remis: zwrot` } }
+          else { result={won:false,amount:-stake,text:`Przegrałeś: ${player} vs ${dealer}`} }
+        }
+
+        jackpot += Math.round(Math.abs(result.amount) * 0.03);
+
+        const evt = { id:Date.now()+9000, day: s.day+1, title: `Kasyno: ${result.won ? 'Wygrana' : 'Przegrana'}`, impact: result.text };
+        const newEvents = [evt, ...s.events].slice(0,160);
+        push(result.won ? 'Kasyno — WYGRAŁEŚ' : 'Kasyno — PRZEGRAŁEŚ', result.text);
+
+        return { ...s, portfolio:{...s.portfolio, cash}, casinoJackpot: jackpot, events: newEvents };
+      });
+    }
+
+    // All-in: increased leverage allowed and risk
+    function allIn({ assetKey, leverage }){
+      setGame(s=>{
+        const cash = s.portfolio.cash;
+        if (cash <= 100) { push('Za mało środków', 'All-in wymaga >100 PLN'); return s; }
+        let marginDebt = s.marginDebt;
+        let investAmount = cash;
+        if (leverage > 0){
+          const borrow = Math.round(cash * leverage * rand(0.8,1.2)); // slightly random borrow
+          investAmount += borrow;
+          marginDebt += borrow;
+        }
+        const priceMap = { stocks: latestMarket.stocks, crypto: latestMarket.crypto, realEstate: latestMarket.real };
+        const price = priceMap[assetKey];
+        const qty = investAmount / price;
+        const newPos = { ...s.portfolio[assetKey], qty: (s.portfolio[assetKey].qty||0) + qty, price: price };
+        push('ALL-IN', `Zainwestowano ${formatPLN(investAmount)} w ${assetKey} (lewar: ${leverage}) — duże ryzyko!`);
+        return { ...s, portfolio:{ ...s.portfolio, cash: 0, [assetKey]: newPos }, marginDebt };
+      });
+    }
+
+    // Export / Import / Reset
+    function exportSave(){
+      const data = JSON.stringify(game);
+      const blob = new Blob([data], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'iwbm_save_v3_highrisk_sport.json'; a.click();
+      URL.revokeObjectURL(url);
+      push('Eksport', 'Zapis wyeksportowany');
+    }
+    function importSave(file){
+      const reader = new FileReader();
+      reader.onload = (e)=> {
+        try {
+          const json = JSON.parse(e.target.result);
+          setGame(json);
+          push('Import', 'Stan załadowany');
+        } catch(e){ push('Błąd importu'); }
+      };
+      reader.readAsText(file);
+    }
+    function resetGame(){
+      if (!confirm('Czy na pewno chcesz rozpocząć nową grę? Postęp zostanie utracony.')) return;
+      const fresh = freshState();
+      setGame(fresh);
+      setWon(false);
+      push('Nowa gra', 'Powodzenia!');
+    }
+
+    // quick utilities
+    function buyPercent(key, pct, margin=false){
+      const amount = Math.floor(game.portfolio.cash * pct);
+      buyAsset(key, amount, margin);
+    }
+    function sellPercent(key, pct){
+      const pos = game.portfolio[key];
+      sellAsset(key, pos.qty * pct);
+    }
+
+    // estimate option premium (more volatile)
+    function estimateOptionPremium({ type, asset, strike, expiryDays, contracts }){
+      const spot = latestMarket[asset];
+      // === INCREASED vols
+      const sigma = asset==='crypto' ? 0.16 : asset==='stocks' ? 0.06 : 0.035;
+      const T = Math.max(1, expiryDays)/365;
+      const intrinsic = type==='call' ? Math.max(0, spot-strike) : Math.max(0, strike-spot);
+      const volTerm = spot * sigma * Math.sqrt(T) * 1.1;
+      const premiumPerContract = Math.max( Math.round((intrinsic + volTerm)), 80);
+      return premiumPerContract * contracts;
+    }
+
+    /* ---------- UI ---------- */
+    return (
+      <div style={{padding:'12px'}}>
+        <div className="app">
+          <header className="app-header">
+            <div className="logo">
+              <div className="circle">I$</div>
+              <div>
+                <div className="title">I will be millionaire — EXTREME (HIGH RISK + SPORT)</div>
+                <div className="subtitle">Cel: {formatPLN(TARGET)} • Ryzyko maksymalne — teraz z klubami sportowymi</div>
+              </div>
+            </div>
+
+            <div style={{marginLeft:'auto', display:'flex', gap:10, alignItems:'center'}}>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:12, color:'var(--muted)'}}>Dzień</div>
+                <div style={{fontWeight:800}}>{game.day}</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:12, color:'var(--muted)'}}>Majątek</div>
+                <div style={{fontWeight:900, color:'#e6fffa'}}>{formatPLN(netWorth)}</div>
+              </div>
+              <button className="btn secondary" onClick={()=>{ /* toggle leaderboard */ const el = document.querySelector('.panel:last-child'); }}>Leaderboard</button>
+              <button className="btn secondary" onClick={resetGame}>Nowa gra</button>
+            </div>
+          </header>
+
+          {/* LEFT COLUMN */}
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            <div className="panel">
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>
+                  <div className="networth">{formatPLN(netWorth)}</div>
+                  <div className="tiny">Cel: {formatPLN(TARGET)}</div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div className="tiny">Gotówka</div>
+                  <div style={{fontWeight:800}}>{formatPLN(Math.round(game.portfolio.cash))}</div>
+                </div>
+              </div>
+
+              <div className="progressbar" aria-hidden>
+                <i style={{width: `${clamp((netWorth/TARGET)*100,0,100)}%`}} />
+              </div>
+
+              <div className="stat-grid">
+                <div className="stat"><div className="tiny">Dochód pasywny / dzień</div><div style={{fontWeight:800}}>{formatPLN(Math.round(game.passivePerDay))}</div></div>
+                <div className="stat"><div className="tiny">Klik (moc)</div><div style={{fontWeight:800}}>{formatPLN(Math.round(game.clickPower))}</div></div>
+                <div className="stat"><div className="tiny">Dług margin</div><div style={{fontWeight:800, color: game.marginDebt>0? '#fca5a5':'#a7f3d0' }}>{formatPLN(Math.round(game.marginDebt))}</div></div>
+                <div className="stat"><div className="tiny">Jackpot kasyna</div><div style={{fontWeight:800}}>{formatPLN(Math.round(game.casinoJackpot))}</div></div>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div style={{fontWeight:800}}>Rynki (ostatnie dni)</div>
+                <div className="tiny">Zmienność & ryzyko</div>
+              </div>
+              <div style={{marginTop:8}}>
+                <MarketSpark markets={game.markets} />
+              </div>
+              <div style={{display:'flex', gap:8, marginTop:10}}>
+                <div style={{flex:1}}>
+                  <div className="tiny">Akcje</div>
+                  <div style={{fontWeight:800}}>{latestMarket.stocks.toFixed(2)}</div>
+                </div>
+                <div style={{flex:1}}>
+                  <div className="tiny">Krypto</div>
+                  <div style={{fontWeight:800}}>{latestMarket.crypto.toFixed(2)}</div>
+                </div>
+                <div style={{flex:1}}>
+                  <div className="tiny">Nieruch.</div>
+                  <div style={{fontWeight:800}}>{latestMarket.real.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div style={{fontWeight:800}}>Wiadomości rynkowe</div>
+                <div className="tiny">Ostatnie zdarzenia</div>
+              </div>
+              <div style={{marginTop:8}} className="events" aria-live="polite">
+                {game.events.length===0 && <div className="event tiny">Brak zdarzeń — gra się rozkręca...</div>}
+                {game.events.map(e=>(
+                  <div key={e.id} className="event">
+                    <div style={{fontWeight:700}}>{e.title}</div>
+                    <div className="tiny">{e.impact} • Dzień {e.day}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop:8}}>
+                <div style={{display:'flex', gap:8}}>
+                  <button className="btn secondary" onClick={()=>{ setMarketNews([]); push('Wyczyść','Usunięto newsy rynkowe'); }}>Wyczyść newsy</button>
+                  <button className="btn secondary" onClick={()=>{ setShowOptions(s=>!s); push('Opcje','Otwórz panel opcji'); }}>Opcje & Kontrakty</button>
+                  <button className="btn" onClick={()=> setShowCasino(true)}>Odwiedź kasyno</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            <div className="panel">
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+                <div style={{fontWeight:800}}>Akcje, Biznesy i Działania</div>
+                <div style={{display:'flex', gap:8}}>
+                  <button className="btn secondary" onClick={()=>{ push('Zapis', 'Zapisywanie stanu'); localStorage.setItem('iwbm_state_manual_v3', JSON.stringify(game)); }}>Zapisz</button>
+                  <button className="btn secondary" onClick={exportSave}>Eksportuj</button>
+                  <label className="btn secondary" style={{cursor:'pointer'}}>
+                    Importuj<input type="file" style={{display:'none'}} onChange={(e)=> { if(e.target.files[0]) importSave(e.target.files[0]); }} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="controls">
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12, color:'var(--muted)'}}>Akcja</div>
+                  <div style={{display:'flex', gap:8, marginTop:6}}>
+                    <button className="btn pulse" onClick={clickWork}>PRACUJ (+{formatPLN(Math.round(game.clickPower))})</button>
+                    <div style={{display:'flex', flexDirection:'column'}}>
+                      <div className="tiny">Szybkość gry</div>
+                      <input type="range" min="0.25" max="6" step="0.25" value={game.speed} onChange={(e)=> setGame(s=> ({...s, speed: Number(e.target.value)}))} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{width:360}}>
+                  <div className="tiny">Szybkie inwestycje</div>
+                  <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
+                    <button className="btn secondary" onClick={()=> buyPercent('stocks', 0.25)}>+25% Akcje</button>
+                    <button className="btn secondary" onClick={()=> buyPercent('crypto', 0.25)}>+25% Krypto</button>
+                    <button className="btn secondary" onClick={()=> buyPercent('realEstate', 0.25)}>+25% Nieruch.</button>
+                    <button className="btn ghost" onClick={()=> takeLoan(50000)}>Weź margin 50k</button>
+                    <button className="btn ghost" onClick={()=> repayMargin(25000)}>Spłać margin 25k</button>
+                    <button className="btn" onClick={()=> allIn({ assetKey:'crypto', leverage:1 })}>ALL-IN Crypto x1</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{marginTop:12}}>
+                <div className="tabs" role="tablist">
+                  <div className={`tab ${tab==='work'?'active':''}`} onClick={()=>setTab('work')}>Praca</div>
+                  <div className={`tab ${tab==='invest'?'active':''}`} onClick={()=>setTab('invest')}>Inwestuj</div>
+                  <div className={`tab ${tab==='biz'?'active':''}`} onClick={()=>setTab('biz')}>Biznesy</div>
+                  <div className={`tab ${tab==='market'?'active':''}`} onClick={()=>setTab('market')}>Rynek</div>
+                </div>
+
+                <div style={{marginTop:10}}>
+                  {tab==='work' && (
+                    <div>
+                      <div style={{display:'grid', gap:8}}>
+                        <div style={{display:'flex', gap:8}}>
+                          <div style={{flex:1, background:'rgba(255,255,255,0.02)', padding:8, borderRadius:8}}>
+                            <div style={{fontWeight:800}}>Szkolenia / ulepszenia</div>
+                            <div className="tiny">Zwiększ moc kliknięcia</div>
+                            <div style={{display:'flex', gap:8, marginTop:8}}>
+                              <button className="btn secondary" onClick={()=> { const cost = Math.round(1000 * Math.pow(1.5, Math.floor(game.clickPower / 200))); if (game.portfolio.cash >= cost) { setGame(s=> ({...s, clickPower: Math.round(s.clickPower*1.2), portfolio:{...s.portfolio, cash: s.portfolio.cash - cost}})); push('Kupiono', 'Kursy rozwoju'); } else push('Za mało gotówki'); }}>Kup kurs ({formatPLN(Math.round(1000 * Math.pow(1.5, Math.floor(game.clickPower / 200))))})</button>
+                              <button className="btn secondary" onClick={()=> { const cost = 4000; if(game.portfolio.cash >= cost){ setGame(s=> ({...s, passivePerDay: s.passivePerDay + 200, portfolio:{...s.portfolio, cash: s.portfolio.cash - cost}})); push('Automatyzacja','Zainstalowano automatyzację'); } else push('Brak środków'); }}>Automatyzacja ({formatPLN(4000)})</button>
+                            </div>
+                          </div>
+
+                          <div style={{width:260, background:'rgba(255,255,255,0.02)', padding:8, borderRadius:8}}>
+                            <div style={{fontWeight:800}}>Krótkie cele</div>
+                            <div className="tiny">Szybkie wyzwania</div>
+                            <div style={{display:'flex', flexDirection:'column', gap:6, marginTop:8}}>
+                              <button className="btn secondary" onClick={()=> { if(game.portfolio.cash >=5000){ setGame(s=>({...s, portfolio:{...s.portfolio, cash: s.portfolio.cash - 5000}, passivePerDay: s.passivePerDay + 450 })); push('Kontrakt','Zlecenie stałe +450/dzień'); } else push('Brak środków'); }}>Weź kontrakt (5000)</button>
+                              <button className="btn secondary" onClick={()=> { if(game.portfolio.cash >= 2000){ setGame(s=>({...s, portfolio:{...s.portfolio, cash: s.portfolio.cash - 2000}, clickPower: s.clickPower + 200 })); push('Zadanie','Tymczasowe zlecenie +moc klik'); } else push('Brak środków'); }}>Zadanie (2000)</button>
+                              <button className="btn" onClick={()=> { setGame(s=>({...s, portfolio:{...s.portfolio, cash: s.portfolio.cash + 12000}})); push('Sztuczka','Drobna baza pieniędzy (debug)'); }}>+12k (dev)</button>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
+
+                  {tab==='invest' && (
+                    <div>
+                      <div style={{display:'grid', gridTemplateColumns:'1fr 360px', gap:12}}>
+                        <div style={{background:'rgba(255,255,255,0.02)', padding:10, borderRadius:10}}>
+                          <div style={{display:'flex', justifyContent:'space-between'}}>
+                            <div style={{fontWeight:800}}>Portfel</div>
+                            <div className="tiny">Gotówka: {formatPLN(Math.round(game.portfolio.cash))}</div>
+                          </div>
+
+                          <div style={{display:'grid', gap:8, marginTop:8}}>
+                            <AssetPanel name="Akcje" price={latestMarket.stocks} pos={game.portfolio.stocks} cash={game.portfolio.cash} onBuy={(amt,useMargin)=> buyAsset('stocks', amt, useMargin)} onSell={(qty)=> sellAsset('stocks', qty)} />
+                            <AssetPanel name="Krypto" price={latestMarket.crypto} pos={game.portfolio.crypto} cash={game.portfolio.cash} onBuy={(amt,useMargin)=> buyAsset('crypto', amt, useMargin)} onSell={(qty)=> sellAsset('crypto', qty)} />
+                            <AssetPanel name="Nieruchomości" price={latestMarket.real} pos={game.portfolio.realEstate} cash={game.portfolio.cash} onBuy={(amt,useMargin)=> buyAsset('realEstate', amt, useMargin)} onSell={(qty)=> sellAsset('realEstate', qty)} />
+                            <div style={{marginTop:8, padding:8, borderRadius:8, background:'rgba(255,255,255,0.01)'}}>
+                              <div style={{fontWeight:800}}>Bundle Nieruchomości (Kup tanio)</div>
+                              <div className="tiny">Kup 500 jednostek po okazyjnej cenie (ryzyko: rynek może spaść)</div>
+                              <div style={{display:'flex', gap:8, marginTop:8}}>
+                                <button className="btn secondary" onClick={()=> {
+                                  const price = latestMarket.real * 0.6;
+                                  const cost = Math.round(price * 500);
+                                  if(game.portfolio.cash < cost){ push('Brak środków'); return; }
+                                  setGame(s=> {
+                                    const newQty = s.portfolio.realEstate.qty + 500;
+                                    return { ...s, portfolio:{ ...s.portfolio, cash: s.portfolio.cash - cost, realEstate: { qty: newQty, price } } };
+                                  });
+                                  push('Bundle', `Kupiono 500 nieruchomości po ${formatPLN(Math.round(price))} (koszt ${formatPLN(cost)})`);
+                                }}>Kup bundle 500 (okazja)</button>
+                                <button className="btn ghost" onClick={()=> {
+                                  const qty = Math.min(500, game.portfolio.realEstate.qty);
+                                  if(qty<=0) { push('Brak pozycji'); return; }
+                                  sellAsset('realEstate', qty);
+                                }}>Sprzedaj 500</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{background:'rgba(255,255,255,0.02)', padding:10, borderRadius:10}}>
+                          <div style={{fontWeight:800}}>Wykresy rynków</div>
+                          <div style={{marginTop:8}}>
+                            <MiniChart markets={game.markets} />
+                          </div>
+                          <div style={{marginTop:8}}>
+                            <div className="tiny">Szybkie strategie</div>
+                            <div style={{display:'flex', gap:6, marginTop:8, flexWrap:'wrap'}}>
+                              <button className="btn secondary" onClick={()=> { buyPercent('stocks',0.5); }}>Buy dip 50%</button>
+                              <button className="btn secondary" onClick={()=> { buyPercent('crypto',0.25, true); }}>Crypto swing 25% (margin)</button>
+                              <button className="btn secondary" onClick={()=> { buyPercent('realEstate',0.2); }}>Nieruch 20%</button>
+                              <button className="btn" onClick={()=> setShowOptions(s=>!s)}>Opcje (kontrakty)</button>
+                              <button className="btn ghost" onClick={()=> takeLoan(100000)}>Weź margin 100k</button>
+                            </div>
+                            <div style={{marginTop:10}}>
+                              <div className="tiny">All-in suggestions:</div>
+                              <div style={{display:'flex', gap:6, marginTop:8}}>
+                                <button className="btn ghost" onClick={()=> allIn({ assetKey:'stocks', leverage:0.8 })}>All-in Stocks x0.8</button>
+                                <button className="btn ghost" onClick={()=> allIn({ assetKey:'crypto', leverage:1.5 })}>All-in Crypto x1.5</button>
+                                <button className="btn ghost" onClick={()=> allIn({ assetKey:'realEstate', leverage:0.4 })}>All-in Real x0.4</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {tab==='biz' && (
+                    <div>
+                      <div style={{fontWeight:800}}>Biznesy — zakładaj, rozwijaj i sprzedawaj</div>
+                      <div style={{marginTop:10}} className="list-grid">
+                        {game.businesses.map((b, idx)=>(
+                          <div key={b.key} className="biz-card">
+                            <div>
+                              <div className="biz-title">{b.name}</div>
+                              <div className="biz-meta">{b.desc}</div>
+                              <div style={{marginTop:8}} className="tiny">Ryzyko: {(b.risk*100||0).toFixed(0)}% • Podstawowy zysk/dzień: {formatPLN(b.dailyProfit||0)}</div>
+                              <div className="tiny">Zdrowie: {Math.round((b.health !== undefined ? b.health : 1.0)*100)}% • Info: {Math.round((b.infoQuality !== undefined ? b.infoQuality : 0.6)*100)}%</div>
+                            </div>
+                            <div className="biz-actions">
+                              {!b.active ? (
+                                <button className="btn" onClick={()=> startBusiness(idx)}>Start ({formatPLN(b.baseCost)})</button>
+                              ) : (
+                                <>
+                                  <button className="btn secondary" onClick={()=> upgradeBusiness(idx)}>Ulepsz (≈{formatPLN(Math.round((b.baseCost||1000) * Math.pow(1.7,b.level||1)))})</button>
+                                  <button className="btn ghost" onClick={()=> checkBusiness(idx)}>Sprawdź</button>
+                                  <button className="btn ghost" onClick={()=> sellBusiness(idx)}>Sprzedaj</button> {/* NEW: sprzedaż */}
+                                  <div style={{display:'flex', flexDirection:'column', gap:6, alignItems:'flex-end'}}>
+                                    <div className="tiny">Poziom {b.level||0}</div>
+                                    <div className="tiny">Status: {b.active ? 'Aktywny' : 'Nieaktywny'}</div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {inspectReport && (
+                        <div style={{marginTop:12}} className="panel">
+                          <div style={{fontWeight:800}}>Raport sprawdzenia biznesu</div>
+                          <div style={{marginTop:8}} className="tiny">
+                            <div>Nazwa: {inspectReport.name}</div>
+                            <div>Zdrowie (est): {inspectReport.currentHealth}%</div>
+                            <div>Prawdopodobieństwo upadku (est): {inspectReport.estimatedFailureProb}</div>
+                            <div>Szacowany zysk/dzień: {inspectReport.estimatedProfitPerDay}</div>
+                            <div>Wiarygodność raportu: {inspectReport.infoConfidence}</div>
+                          </div>
+                          <div style={{marginTop:8}}>
+                            <button className="btn secondary" onClick={()=> setInspectReport(null)}>Zamknij raport</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {tab==='market' && (
+                    <div>
+                      <div style={{display:'flex', gap:8}}>
+                        <div style={{flex:1, background:'rgba(255,255,255,0.02)', padding:10, borderRadius:8}}>
+                          <div style={{fontWeight:800}}>Warunki rynkowe</div>
+                          <div style={{marginTop:6}} className="tiny">Rynek jest symulowany — zdarzenia losowe, boom & bessa</div>
+                          <div style={{marginTop:12}}>
+                            <MiniChart markets={game.markets} />
+                          </div>
+                          <div style={{marginTop:12}}>
+                            <div className="tiny">Najnowsze newsy:</div>
+                            <ul>
+                              {marketNews.length===0 && <li className="tiny">Brak recent news.</li>}
+                              {marketNews.map((n,i)=> <li key={i}>{n.headline} • {(n.impact*100).toFixed(1)}%</li>)}
+                            </ul>
+                          </div>
+                        </div>
+
+                        <div style={{width:360, background:'rgba(255,255,255,0.02)', padding:10, borderRadius:8}}>
+                          <div style={{fontWeight:800}}>Szybkie akcje</div>
+                          <div style={{marginTop:8, display:'flex', flexDirection:'column', gap:6}}>
+                            <button className="btn secondary" onClick={()=> { setGame(s=>({...s, markets: [...s.markets, {...s.markets[s.markets.length-1], day: s.markets.length+1, stocks: s.markets[s.markets.length-1].stocks*1.22 } ] })); push('Ruch rynkowy','Sztuczny wzrost akcji +22%'); }}>Symuluj boom akcji</button>
+                            <button className="btn secondary" onClick={()=> { setGame(s=>({...s, markets: [...s.markets, {...s.markets[s.markets.length-1], day: s.markets.length+1, stocks: s.markets[s.markets.length-1].stocks*0.72 } ] })); push('Ruch rynkowy','Sztuczny spadek akcji -28%'); }}>Symuluj krach</button>
+                            <button className="btn secondary" onClick={()=> { takeLoan(50000); }}>Weź szybki kredyt (50k)</button>
+                            <button className="btn ghost" onClick={()=> { setGame(s=>({...s, casinoJackpot: s.casinoJackpot + 20000})); push('Dotacja','Kasyno zasilone +20k'); }}>Zasilić Jackpot (+20k)</button>
+                            <button className="btn ghost" onClick={()=> {
+                              setGame(s=> {
+                                const m = s.markets[s.markets.length-1];
+                                const next = {...m, day: m.day+1, real: m.real * 0.5}; // deeper drop
+                                return {...s, markets: [...s.markets, next], events: [{id:Date.now(), day: s.day+1, title:'Okazja na nieruchomości', impact:'Real obniżone do 50%'} ,...s.events].slice(0,160)}
+                              });
+                              push('Rynek','Nieruchomości TANIO! Możesz kupić okazje bundle.');
+                            }}>Wymuś "tanie nieruchomości"</button>
+                          </div>
+                          <div style={{marginTop:12}}>
+                            <div className="tiny">Opcje w portfelu:</div>
+                            <ul>
+                              {game.options.length===0 && <li className="tiny">Brak opcji</li>}
+                              {game.options.map(o=> <li key={o.id}>{o.type} {o.asset} strike {Math.round(o.strike)} expiry {o.expiryDay}</li>)}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* achievements & leaderboard */}
+            <div style={{display:'flex', gap:12}}>
+              <div style={{flex:1}} className="panel">
+                <div style={{fontWeight:800}}>Osiągnięcia</div>
+                <div style={{marginTop:8}}>
+                  <ul style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                    {Object.keys(game.achievements).length===0 && <li className="tiny">Brak osiągnięć — działaj!</li>}
+                    {Object.keys(game.achievements).map(k=>(
+                      <li key={k} style={{background:'rgba(255,255,255,0.02)', padding:'6px 10px', borderRadius:8}}>{k}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div style={{width:320}} className="panel">
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                  <div style={{fontWeight:800}}>Leaderboard</div>
+                  <div className="tiny">Lokale</div>
+                </div>
+                <div style={{marginTop:8}}>
+                  <ol style={{paddingLeft:12}}>
+                    {game.leaderboard && game.leaderboard.length>0 ? game.leaderboard.slice(0,8).map((r,i)=>(
+                      <li key={i} style={{marginBottom:6}}>{i+1}. {r.name} — {formatPLN(r.net)} <div className="tiny">Dzień {r.day}</div></li>
+                    )) : <div className="tiny">Brak wyników</div>}
+                  </ol>
+                  <div style={{marginTop:8}}>
+                    <div className="tiny">Symulowani gracze:</div>
+                    <ul>
+                      {game.simulatedBots.slice(0,6).map(b=> <li key={b.id} className="tiny">{b.name}: {formatPLN(b.net)} ({b.strategy})</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* toasts */}
+          <div className="toasts" aria-live="polite">
+            {toasts.map(t=>(
+              <div className="toast" key={t.id}>
+                <div style={{fontWeight:800}}>{t.title}</div>
+                {t.desc && <div className="tiny">{t.desc}</div>}
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* Casino Modal */}
+        {showCasino && (
+          <div className="overlay" onClick={()=> setShowCasino(false)}>
+            <div className="modal" onClick={(e)=> e.stopPropagation()}>
+              <h3>Kasyno — obstaw</h3>
+              <CasinoPanel onPlay={(params)=> { playCasino(params); }} jackpot={game.casinoJackpot} />
+              <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:12}}>
+                <button className="btn secondary" onClick={()=> setShowCasino(false)}>Zamknij</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Options Modal */}
+        {showOptions && (
+          <div className="overlay" onClick={()=> setShowOptions(false)}>
+            <div className="modal" onClick={(e)=> e.stopPropagation()}>
+              <h3>Panel opcji / kontraktów</h3>
+              <OptionsPanel estimatePremium={estimateOptionPremium} onBuy={(o)=> buyOption(o)} latestMarket={latestMarket} portfolioCash={game.portfolio.cash} />
+              <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:12}}>
+                <button className="btn secondary" onClick={()=> setShowOptions(false)}>Zamknij</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Win overlay */}
+        {won && (
+          <div className="overlay">
+            <div className="modal" style={{textAlign:'center'}}>
+              <div style={{display:'flex', justifyContent:'center'}}><div style={{width:72,height:72,borderRadius:18, background:'linear-gradient(135deg,#fbbf24,#60a5fa)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:28}}>🏆</div></div>
+              <h2>Masz to! Cel osiągnięty</h2>
+              <p>Gratulacje — osiągnąłeś wymagany majątek. Możesz zapisać wynik i kontynuować rozgrywkę.</p>
+              <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:12}}>
+                <button className="btn" onClick={()=> { setWon(false); }}>Zagraj ponownie</button>
+                <button className="btn secondary" onClick={()=> setWon(false)}>Kontynuuj rozgrywkę</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    );
+  }
+
+  /* ---------- UI Subcomponents (unchanged structure) ---------- */
+
+  function MarketSpark({ markets }){
+    const W=350,H=120,P=8;
+    const data = markets.slice(-80);
+    const xs = data.map(d=>d.day);
+    const svals = data.map(d=>d.stocks);
+    const cvals = data.map(d=>d.crypto);
+    const rvals = data.map(d=>d.real);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs);
+    const allVals = [...svals,...cvals,...rvals];
+    const ymin = Math.min(...allVals), ymax = Math.max(...allVals);
+    const x = v => P + ((v - xmin)/(xmax - xmin || 1))*(W - 2*P);
+    const y = v => H - P - ((v - ymin)/(ymax - ymin || 1))*(H - 2*P);
+
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart">
+        <rect x="0" y="0" width={W} height={H} fill="transparent" />
+        {svals.length>0 && <polyline fill="none" stroke="#60a5fa" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.stocks)}`).join(' ')} />}
+        {cvals.length>0 && <polyline fill="none" stroke="#f472b6" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.crypto)}`).join(' ')} />}
+        {rvals.length>0 && <polyline fill="none" stroke="#facc15" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.real)}`).join(' ')} />}
+      </svg>
+    );
+  }
+
+  function MiniChart({ markets }){
+    const W=680,H=140,P=20;
+    const data = markets.slice(-120);
+    const xs = data.map(d=>d.day);
+    if (xs.length===0) return <div style={{height:120}} />;
+    const svals = data.map(d=>d.stocks);
+    const cvals = data.map(d=>d.crypto);
+    const rvals = data.map(d=>d.real);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs);
+    const allVals = [...svals,...cvals,...rvals];
+    const ymin = Math.min(...allVals), ymax = Math.max(...allVals);
+    const x = v => P + ((v - xmin)/(xmax - xmin || 1))*(W - 2*P);
+    const y = v => H - P - ((v - ymin)/(ymax - ymin || 1))*(H - 2*P);
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%'}}>
+        <rect x="0" y="0" width={W} height={H} fill="transparent" />
+        <g opacity="0.08">
+          {[0,1,2,3].map(i=> <rect key={i} x={i*(W/4)} y="0" width={W/4} height={H} />)}
+        </g>
+        <polyline fill="none" stroke="#60a5fa" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.stocks)}`).join(' ')} />
+        <polyline fill="none" stroke="#f472b6" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.crypto)}`).join(' ')} />
+        <polyline fill="none" stroke="#facc15" strokeWidth="2" points={data.map(d=>`${x(d.day)},${y(d.real)}`).join(' ')} />
+      </svg>
+    );
+  }
+
+  function AssetPanel({ name, price, pos, cash, onBuy, onSell }){
+    const [amount, setAmount] = useState(0);
+    const [qty, setQty] = useState(0);
+    return (
+      <div style={{background:'rgba(255,255,255,0.01)', padding:8, borderRadius:8}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div style={{fontWeight:800}}>{name}</div>
+          <div className="tiny">Cena: {formatPLN(Math.round(price))}</div>
+        </div>
+        <div style={{display:'flex', gap:8, marginTop:8}}>
+          <input type="number" className="input" placeholder="Kwota (PLN)" value={amount} onChange={(e)=> setAmount(Number(e.target.value))} />
+          <button className="btn" onClick={()=> { onBuy(Math.abs(Math.round(amount || 0)), false); setAmount(0); }}>Kup</button>
+          <button className="btn ghost" onClick={()=> { onBuy(Math.abs(Math.round(amount || 0)), true); setAmount(0); }}>Kup (marg.)</button>
+        </div>
+        <div style={{display:'flex', gap:8, marginTop:8, alignItems:'center'}}>
+          <input type="number" className="input" placeholder="Ilość" value={qty} onChange={(e)=> setQty(Number(e.target.value))} />
+          <button className="btn secondary" onClick={()=> { onSell(Math.abs(Number(qty||0))); setQty(0); }}>Sprzedaj</button>
+        </div>
+        <div style={{marginTop:8}} className="tiny">Posiadane: { (pos.qty||0).toFixed(3) } @ {formatPLN(Math.round(pos.price||0))}</div>
+      </div>
+    );
+  }
+
+  function CasinoPanel({ onPlay, jackpot }){
+    const [stake, setStake] = useState(100);
+    const [gameType, setGameType] = useState('coin');
+    const [betChoice, setBetChoice] = useState('red');
+    return (
+      <div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+          <div>
+            <div className="tiny">Typ gry</div>
+            <select className="input" value={gameType} onChange={(e)=> setGameType(e.target.value)}>
+              <option value="coin">Moneta</option>
+              <option value="roulette">Ruletka</option>
+              <option value="slots">Slots</option>
+              <option value="jackpot">Jackpot</option>
+              <option value="highroller">Highroller</option>
+              <option value="blackjack">Blackjack</option>
+            </select>
+          </div>
+          <div>
+            <div className="tiny">Stawka</div>
+            <input className="input" type="number" value={stake} onChange={(e)=> setStake(Number(e.target.value))} />
+          </div>
+        </div>
+        <div style={{marginTop:8, display:'flex', gap:8}}>
+          <button className="btn" onClick={()=> onPlay({ gameType, stake, betChoice })}>Graj</button>
+          <div className="tiny">Jackpot: {formatPLN(Math.round(jackpot))}</div>
+        </div>
+      </div>
+    );
+  }
+
+  function OptionsPanel({ estimatePremium, onBuy, latestMarket, portfolioCash }){
+    const [type, setType] = useState('call');
+    const [asset, setAsset] = useState('stocks');
+    const [strike, setStrike] = useState(Math.round(latestMarket.stocks));
+    const [expiry, setExpiry] = useState(7);
+    const [contracts, setContracts] = useState(1);
+    const [premiumEstimate, setPremiumEstimate] = useState(0);
+
+    useEffect(()=>{
+      const val = estimatePremium({ type, asset, strike, expiryDays: expiry, contracts });
+      setPremiumEstimate(val);
+    }, [type, asset, strike, expiry, contracts]);
+
+    return (
+      <div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+          <div>
+            <div className="tiny">Typ</div>
+            <select value={type} onChange={(e)=> setType(e.target.value)} className="input">
+              <option value="call">CALL</option>
+              <option value="put">PUT</option>
+            </select>
+          </div>
+          <div>
+            <div className="tiny">Aktywum</div>
+            <select value={asset} onChange={(e)=> setAsset(e.target.value)} className="input">
+              <option value="stocks">Akcje</option>
+              <option value="crypto">Krypto</option>
+              <option value="real">Nieruchomości</option>
+            </select>
+          </div>
+          <div>
+            <div className="tiny">Strike</div>
+            <input type="number" className="input" value={strike} onChange={(e)=> setStrike(Number(e.target.value))} />
+          </div>
+          <div>
+            <div className="tiny">Expiry (dni)</div>
+            <input type="number" className="input" value={expiry} onChange={(e)=> setExpiry(Number(e.target.value))} />
+          </div>
+          <div>
+            <div className="tiny">Kontrakty</div>
+            <input type="number" className="input" value={contracts} onChange={(e)=> setContracts(Number(e.target.value))} />
+          </div>
+          <div>
+            <div className="tiny">Koszt (est.)</div>
+            <div style={{fontWeight:800}}>{formatPLN(premiumEstimate)}</div>
+          </div>
+        </div>
+
+        <div style={{marginTop:10, display:'flex', gap:8}}>
+          <button className="btn" onClick={()=> {
+            if (portfolioCash < premiumEstimate) { alert('Brak środków'); return; }
+            onBuy({ type, asset, strike, premium: premiumEstimate, expiryDays: expiry, contracts });
+          }}>Kup opcję</button>
+        </div>
+
+        <div style={{marginTop:12}} className="tiny">Uwaga: system opcji jest uproszczony i ma na celu dodanie strategii ryzyka oraz emocji. Opcje wygasają codziennie w ticku.</div>
+      </div>
+    );
+  }
+
+  /* ---------- render root ---------- */
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+  </script>
+</body>
+</html>
